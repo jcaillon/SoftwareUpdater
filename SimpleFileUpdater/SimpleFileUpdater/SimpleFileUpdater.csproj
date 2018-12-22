@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Basic info">
     <!-- Exe or Library-->
-    <OutputType>Library</OutputType>
-    <AssemblyName>GithubUpdater</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>SimpleFileUpdater</AssemblyName>
     <!-- RepositoryName is a custom variable, should be the name of the github repo -->
-    <RepositoryName>GithubUpdater</RepositoryName>
+    <RepositoryName>SimpleFileUpdater</RepositoryName>
     <RootNamespace>$(AssemblyName)</RootNamespace>
     <Version>1.0.0-beta</Version>
     <!-- Assembly.GetExecutingAssembly().GetName().Version = $(Version) but completed if necessary to make a 4 digit version and without what is after the dash -->
@@ -14,10 +14,9 @@
     <!-- this will be the product name-->
     <Product>$(AssemblyName)</Product>
     <!-- this will be the file description -->
-    <AssemblyTitle>Update your software through github releases.</AssemblyTitle>
+    <AssemblyTitle>Simply update files after an application has closed.</AssemblyTitle>
     <Copyright>Copyright (c) 2018 - Julien Caillon - GNU General Public License v3</Copyright>
-    <ApplicationIcon>
-    </ApplicationIcon>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Label="Package info basic">
     <Company>Noyacode</Company>
@@ -29,9 +28,10 @@
     <Description>$(AssemblyTitle)</Description>
   </PropertyGroup>
   <PropertyGroup Label="Package info">
+    <IsPackable>false</IsPackable>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageVersion>$(Version)</PackageVersion>
-    <PackageTags>update updater github releases release api software install installation</PackageTags>
+    <PackageTags>update updater</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://jcaillon.github.io/$(RepositoryName)</PackageProjectUrl>
@@ -50,18 +50,17 @@ See more details about this release on github: https://github.com/jcaillon/$(Rep
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>true</IncludeSymbols>
-    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <!-- https://github.com/dotnet/sourcelink -->
   <ItemGroup Label="PackageReference specific for your source control provider">
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Resources\SimpleUpdater\" />
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <PropertyGroup Label="Compilation info">
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net20</TargetFrameworks>
     <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
     <Platform>Any Cpu</Platform>
     <Configuration>Release</Configuration>
@@ -103,8 +102,41 @@ See more details about this release on github: https://github.com/jcaillon/$(Rep
     </Otherwise>
   </Choose>
 
-  <ItemGroup Label="Resources">
-    <EmbeddedResource Include="Resources\SimpleUpdater\*.exe" />
-  </ItemGroup>
-  
+  <PropertyGroup>
+    <ApplicationManifest Condition=" '$(AdminManifest)' == 'true' ">app.admin.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest Condition=" '$(AdminManifest)' == 'false' ">app.user.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <!-- ============================================================= -->
+  <!-- .net FRAMEWORK : Copy the output files to the target directory -->
+  <Target 
+    Name="CopyOutputNETFramework" 
+    AfterTargets="CoreBuild" 
+    Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">
+    
+    <!-- list the outputfiles which are : .exe/.dll,.pdb -->
+    <ItemGroup>
+      <OutputFiles Include="@(IntermediateAssembly)"></OutputFiles>
+    </ItemGroup>
+
+    <PropertyGroup Label="Compute ReleaseDirectoryName">
+      <ExeSuffix></ExeSuffix>
+      <ExeSuffix Condition=" '$(AdminManifest)' == 'true' ">_admin</ExeSuffix>
+    </PropertyGroup>
+
+    <!-- copy the files to the release path -->
+    <Copy 
+      SourceFiles="@(OutputFiles)"
+      Condition="Exists('%(Fullpath)')"
+      DestinationFiles="$(ProjectDir)\..\..\GithubUpdater\Resources\SimpleUpdater\%(FileName)$(ExeSuffix).exe"
+      OverwriteReadOnlyFiles="true"
+      SkipUnchangedFiles="false">
+    </Copy>
+
+    <Message Importance="high" Text="=========================="/>
+    <Message Importance="high" Text="[INFO] Copying output : %0A   @(OutputFiles->'%(Fullpath)', '%0A   ')"/>
+  </Target>
+
 </Project>

@@ -67,6 +67,25 @@ echo.[%time:~0,8% INFO] SOLUTION : %SOLUTION_NAME%
 echo.[%time:~0,8% INFO] PROJECT PATH : %PROJECT_PATH%
 
 REM @@@@@@@@@@@@@@
+REM Build SimpleFileUpdater
+
+echo.
+echo.=========================
+echo.[%time:~0,8% INFO] Building SimpleFileUpdater project
+
+pushd SimpleFileUpdater
+call :MS_BUILD SimpleFileUpdater\SimpleFileUpdater.csproj /p:Configuration=Release /p:Platform=AnyCPU /t:Rebuild /verbosity:minimal /p:AdminManifest=true /bl:SimpleFileUpdater_admin.binlog
+if not "%ERRORLEVEL%"=="0" (
+	GOTO ENDINERROR
+)
+
+call :MS_BUILD SimpleFileUpdater\SimpleFileUpdater.csproj /p:Configuration=Release /p:Platform=AnyCPU /t:Rebuild /verbosity:minimal /p:AdminManifest=false /bl:SimpleFileUpdater_user.binlog
+if not "%ERRORLEVEL%"=="0" (
+	GOTO ENDINERROR
+)
+popd
+
+REM @@@@@@@@@@@@@@
 REM Actual Build
 
 echo.
