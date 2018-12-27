@@ -307,7 +307,7 @@ namespace GithubUpdater.Http {
                         _cancelToken?.ThrowIfCancellationRequested();
                     }
 
-                    if (totalDone != totalLength) {
+                    if (totalLength > 0 && totalDone != totalLength) {
                         throw new Exception($"File download failed, {totalDone} bytes read but {totalLength} bytes were expected.");
                     }
                 }

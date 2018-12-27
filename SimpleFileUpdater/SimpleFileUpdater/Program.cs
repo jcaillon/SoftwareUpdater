@@ -6,27 +6,25 @@ using System.Threading;
 using System.Windows.Forms;
 
 namespace SimpleFileUpdater {
-
     /// <summary>
     /// Main program.
     /// </summary>
     public static class Program {
-
         /// <summary>
         /// Main method.
         /// </summary>
         /// <param name="args"></param>
         [STAThread]
         public static int Main(string[] args) {
-
-            if (args == null || args.Length < 4) {
-                MessageBox.Show("Wrong number of arguments passed to this program.\n\nExcepting:\n\n{--name PROCESSNAME | --pid PROCESSID} --action-file ACTIONFILE", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (args == null) {
+                MessageBox.Show("This program requires arguments", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
 
             string processName = null;
             int? processId = null;
             string actionFilePath = null;
+            int? waitForCloseInMs = null;
 
             for (int i = 0; i < args.Length - 1; i++) {
                 if (args[i] == "--name") {
@@ -35,11 +33,13 @@ namespace SimpleFileUpdater {
                     processId = int.Parse(args[i + 1]);
                 } else if (args[i] == "--action-file") {
                     actionFilePath = args[i + 1];
+                } else if (args[i] == "--wait") {
+                    waitForCloseInMs = int.Parse(args[i + 1]);
                 }
             }
 
             if (string.IsNullOrEmpty(processName) && !processId.HasValue || string.IsNullOrEmpty(actionFilePath)) {
-                MessageBox.Show("Wrong number of arguments passed to this program.\n\nExcepting:\n\n{--name PROCESSNAME | --pid PROCESSID} --action-file ACTIONFILE", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Wrong number of arguments passed to this program.\n\nExcepting:\n\n{--name PROCESSNAME | --pid PROCESSID} --action-file ACTIONFILE [--wait TIME_IN_MS]", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
 
@@ -49,6 +49,7 @@ namespace SimpleFileUpdater {
                     Thread.Sleep(200);
                 }
             }
+
             if (processId.HasValue) {
                 while (IsProcessOpen(processId.Value)) {
                     Thread.Sleep(200);
@@ -59,8 +60,9 @@ namespace SimpleFileUpdater {
                 MessageBox.Show("The action file specified with argument --action-file ACTIONFILE must exist.", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
-            
-            
+
+            Thread.Sleep(waitForCloseInMs ?? 500);
+
             using (StringReader reader = new StringReader(File.ReadAllText(actionFilePath, Encoding.Default))) {
                 string line;
                 while ((line = reader.ReadLine()) != null) {
@@ -73,14 +75,17 @@ namespace SimpleFileUpdater {
                                         Process.Start(splitLine[1]);
                                         break;
                                 }
+
                                 break;
                             case 3:
                                 if (File.Exists(splitLine[2])) {
                                     File.Delete(splitLine[2]);
                                 }
+
                                 if (!Directory.Exists(Path.GetDirectoryName(splitLine[2]))) {
                                     Directory.CreateDirectory(Path.GetDirectoryName(splitLine[2]) ?? "");
                                 }
+
                                 switch (splitLine[0]) {
                                     case "copy":
                                         File.Copy(splitLine[1], splitLine[2]);
@@ -92,6 +97,7 @@ namespace SimpleFileUpdater {
                                         Process.Start(splitLine[1], splitLine[2]);
                                         break;
                                 }
+
                                 break;
                         }
                     } catch (Exception e) {
@@ -112,6 +118,7 @@ namespace SimpleFileUpdater {
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -121,6 +128,7 @@ namespace SimpleFileUpdater {
                     return true;
                 }
             }
+
             return false;
         }
     }

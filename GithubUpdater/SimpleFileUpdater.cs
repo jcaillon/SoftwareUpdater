@@ -111,19 +111,20 @@ namespace GithubUpdater {
             _output.Append("move").Append('\t').Append(from).Append('\t').Append(to).AppendLine();
             return true;
         }
-        
+
         /// <summary>
         /// Starts the updater, it will wait for the given process (defaults to current process) to end before starting its business.
         /// </summary>
         /// <param name="pidToWait"></param>
-        public void Start(int? pidToWait = null) {
+        /// <param name="delayBeforeActionInMilliseconds"></param>
+        public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
             Resources.Resources.WriteSimpleFileUpdateFile(_requireAdminExe, _exeFilePath);
             var actionFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
             _process = new Process {
                 StartInfo = {
                     FileName = _exeFilePath,
-                    Arguments = $"--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"",
+                    Arguments = $"--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = true
                 }
