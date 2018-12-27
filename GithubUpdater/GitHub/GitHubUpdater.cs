@@ -155,7 +155,7 @@ namespace GithubUpdater.GitHub {
                 _httpRequest.UseAuthorizationHeader(HttpAuthorizationType.Token, "");
                 res = _httpRequest.GetJson(GetReleaseApiRelativeUrl(), out releases);
             }
-            if (res.StatusCode != HttpStatusCode.OK) {
+            if (!res.Success || res.StatusCode != HttpStatusCode.OK) {
                 throw new GithubFailedRequestException($"Failed to get the expected response from github releases API: {res.StatusDescription}", res.Exception);
             }
 
@@ -186,7 +186,7 @@ namespace GithubUpdater.GitHub {
         /// <returns></returns>
         /// <exception cref="GithubFailedRequestException"></exception>
         public string DownloadToTempFile(string urlToDownload, Action<DownloadProgress> progress = null) {
-            var path = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+            var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var res = _httpRequest.DownloadFile(urlToDownload, path, progress);
             if (!res.Success) {
                 throw new GithubFailedRequestException($"Failed to download {urlToDownload} in {path}: {res.StatusDescription}", res.Exception);
