@@ -306,6 +306,10 @@ namespace GithubUpdater.Http {
                         progress?.Invoke(new DownloadProgress(totalLength, totalDone));
                         _cancelToken?.ThrowIfCancellationRequested();
                     }
+
+                    if (totalDone != totalLength) {
+                        throw new Exception($"File download failed, {totalDone} bytes read but {totalLength} bytes were expected.");
+                    }
                 }
             }
 

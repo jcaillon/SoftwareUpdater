@@ -72,20 +72,31 @@ namespace GithubUpdater {
         /// <summary>
         /// Allows to execute a program during the update.
         /// </summary>
-        public bool AddProgramExecution(string pathToExe) {
+        /// <param name="pathToExe"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public bool AddProgramExecution(string pathToExe, string parameters = null) {
             if (string.IsNullOrEmpty(pathToExe)) {
                 return false;
             }
             if (_output == null) {
                 _output = new StringBuilder();
             }
-            _output.Append("start").Append('\t').Append(pathToExe).AppendLine();
+
+            if (string.IsNullOrEmpty(parameters)) {
+                _output.Append("start").Append('\t').Append(pathToExe).AppendLine();
+            } else {
+                _output.Append("start").Append('\t').Append(pathToExe).Append('\t').Append(parameters).AppendLine();
+            }
             return true;
         }
 
         /// <summary>
         /// Allows to move a file during the update.
         /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
         public bool AddFileToMove(string from, string to) {
             if (string.IsNullOrEmpty(from) || !File.Exists(from) || string.IsNullOrEmpty(to)) {
                 return false;

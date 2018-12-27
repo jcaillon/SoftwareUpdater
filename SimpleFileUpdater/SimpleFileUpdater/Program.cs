@@ -88,6 +88,9 @@ namespace SimpleFileUpdater {
                                     case "move":
                                         File.Move(splitLine[1], splitLine[2]);
                                         break;
+                                    case "start":
+                                        Process.Start(splitLine[1], splitLine[2]);
+                                        break;
                                 }
                                 break;
                         }
