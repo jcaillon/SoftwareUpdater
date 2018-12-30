@@ -376,4 +376,4 @@ _ReSharper*
 ## END OF CORE LIST
 #####################################################################
 
-/GithubUpdater/Resources/SimpleUpdater/*.exe
+GithubUpdater/Resources/SimpleFileUpdater*

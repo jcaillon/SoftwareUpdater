@@ -30,7 +30,7 @@
     <ProjProductName>$(ProjAssemblyName)</ProjProductName>
     <ProjRepositoryName>$(ProjAssemblyName)</ProjRepositoryName>
     <ProjRepositoryOwner>$(ProjAuthor)</ProjRepositoryOwner>
-    <ProjRootNamespace>$(ProjAssemblyName)</ProjRootNamespace>
+    <ProjRootNamespace>$(ProjRepositoryName)</ProjRootNamespace>
     <ProjCopyright>Copyright (c) $([System.DateTime]::Now.ToString(yyyy)) - $(ProjAuthor)</ProjCopyright>
   </PropertyGroup>
 
