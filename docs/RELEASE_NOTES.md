@@ -1,3 +1,3 @@
 ## Improvements
 
-- Added the possibility to pass parameters to the program to start with the `SimpleFileUpdater`
+- Fix the behavior for .net core application

@@ -45,7 +45,7 @@ install:
 #---------------------------------#
 
 build_script:
-  - cmd: build.bat
+  - cmd: build_simple_updater.bat && build.bat
 
 #---------------------------------#
 #       tests configuration       #

@@ -2,8 +2,13 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Threading;
+
+#if WINDOWSONLYBUILD
 using System.Windows.Forms;
+using System.Threading;
+#else
+using System.Threading.Tasks;
+#endif
 
 namespace SimpleFileUpdater {
     /// <summary>
@@ -17,7 +22,12 @@ namespace SimpleFileUpdater {
         [STAThread]
         public static int Main(string[] args) {
             if (args == null) {
+#if WINDOWSONLYBUILD
                 MessageBox.Show("This program requires arguments", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#else
+                Console.WriteLine("This program requires arguments");
+                Console.ReadKey();
+#endif
                 return 1;
             }
 
@@ -39,30 +49,52 @@ namespace SimpleFileUpdater {
             }
 
             if (string.IsNullOrEmpty(processName) && !processId.HasValue || string.IsNullOrEmpty(actionFilePath)) {
+#if WINDOWSONLYBUILD
                 MessageBox.Show("Wrong number of arguments passed to this program.\n\nExcepting:\n\n{--name PROCESSNAME | --pid PROCESSID} --action-file ACTIONFILE [--wait TIME_IN_MS]", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#else
+                Console.WriteLine("Wrong number of arguments passed to this program.\n\nExcepting:\n\n{--name PROCESSNAME | --pid PROCESSID} --action-file ACTIONFILE [--wait TIME_IN_MS]");
+                Console.ReadKey();
+#endif
                 return 1;
             }
 
             // wait for the process to stop
             if (!string.IsNullOrEmpty(processName)) {
                 while (IsProcessOpen(processName)) {
+#if WINDOWSONLYBUILD
                     Thread.Sleep(200);
+#else
+                    Task.Delay(200).Wait();
+#endif
                 }
             }
 
             if (processId.HasValue) {
                 while (IsProcessOpen(processId.Value)) {
+#if WINDOWSONLYBUILD
                     Thread.Sleep(200);
+#else
+                    Task.Delay(200).Wait();
+#endif
                 }
             }
 
             if (string.IsNullOrEmpty(actionFilePath) || !File.Exists(actionFilePath)) {
+#if WINDOWSONLYBUILD 
                 MessageBox.Show("The action file specified with argument --action-file ACTIONFILE must exist.", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#else
+                Console.WriteLine("The action file specified with argument --action-file ACTIONFILE must exist.");
+                Console.ReadKey();
+#endif
                 return 1;
             }
 
+#if WINDOWSONLYBUILD
             Thread.Sleep(waitForCloseInMs ?? 500);
-
+#else
+            Task.Delay(waitForCloseInMs ?? 500).Wait();
+#endif
+            
             using (StringReader reader = new StringReader(File.ReadAllText(actionFilePath, Encoding.Default))) {
                 string line;
                 while ((line = reader.ReadLine()) != null) {
@@ -101,7 +133,12 @@ namespace SimpleFileUpdater {
                                 break;
                         }
                     } catch (Exception e) {
+#if WINDOWSONLYBUILD
                         MessageBox.Show("The update failed:\n" + e.Message, "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+#else
+                        Console.WriteLine("The update failed:\n" + e.Message);
+                        Console.ReadKey();
+#endif
                         return 1;
                     }
                 }

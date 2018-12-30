@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using GithubUpdater.Utilities;
 
 [assembly: InternalsVisibleTo("GithubUpdater.Test")]
 
@@ -39,7 +40,7 @@ namespace GithubUpdater {
         /// </summary>
         public static SimpleFileUpdater Instance => _instance ?? (_instance = new SimpleFileUpdater());
 
-        private readonly string _exeFilePath = Path.Combine(Path.GetTempPath(), "SimpleFileUpdater.exe");
+        private readonly string _exeDirectoryPath = Path.Combine(Path.GetTempPath(), "SimpleFileUpdater");
         private bool _requireAdminExe;
         private StringBuilder _output;
         private Process _process;
@@ -59,9 +60,9 @@ namespace GithubUpdater {
         /// </summary>
         /// <returns></returns>
         public bool TryToCleanLastExe() {
-            if (File.Exists(_exeFilePath)) {
+            if (Directory.Exists(_exeDirectoryPath)) {
                 try {
-                    File.Delete(_exeFilePath);
+                    Directory.Delete(_exeDirectoryPath);
                 } catch (Exception) {
                     // ignore
                 }
@@ -118,20 +119,24 @@ namespace GithubUpdater {
         /// <param name="pidToWait"></param>
         /// <param name="delayBeforeActionInMilliseconds"></param>
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
-            Resources.Resources.WriteSimpleFileUpdateFile(_requireAdminExe, _exeFilePath);
-            var actionFilePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            if (!Directory.Exists(_exeDirectoryPath)) {
+                Directory.CreateDirectory(_exeDirectoryPath);
+            }
+            
+            var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, _exeDirectoryPath);
+            var actionFilePath = Path.Combine(_exeDirectoryPath, Path.GetRandomFileName());
             File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
+            
             _process = new Process {
                 StartInfo = {
-                    FileName = _exeFilePath,
-                    Arguments = $"--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
+                    FileName = DotNet.IsNetStandardBuild ? DotNet.FullPathOrDefault() : _exeDirectoryPath,
+                    Arguments = $"{(DotNet.IsNetStandardBuild ? $"{Path.GetFileName(executablePath)} " : "")}--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
                     WindowStyle = ProcessWindowStyle.Hidden,
-                    UseShellExecute = true
+                    UseShellExecute = !DotNet.IsNetStandardBuild,
+                    WorkingDirectory = _exeDirectoryPath,
+                    Verb = _requireAdminExe ? "runas" : ""
                 }
             };
-            if (_requireAdminExe) {
-                _process.StartInfo.Verb = "runas";
-            }
             _process.Start();
         }
 

@@ -17,7 +17,10 @@
 // along with GithubUpdater. If not, see <http://www.gnu.org/licenses/>.
 // ========================================================================
 #endregion
+
+using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace GithubUpdater.Resources {
@@ -26,24 +29,47 @@ namespace GithubUpdater.Resources {
     /// Resources.
     /// </summary>
     internal static class Resources {
-
+        
         /// <summary>
         /// Write the embedded files.
         /// </summary>
+        /// <param name="coreVersion"></param>
         /// <param name="adminVersion"></param>
-        /// <param name="filePath"></param>
-        public static void WriteSimpleFileUpdateFile(bool adminVersion, string filePath) {
-            var dir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) {
-                Directory.CreateDirectory(dir);
+        /// <param name="directoryPath"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static string WriteSimpleFileUpdateFile(bool coreVersion, bool adminVersion, string directoryPath) {
+            
+            if (string.IsNullOrEmpty(directoryPath)) {
+                throw new ArgumentNullException(nameof(directoryPath));
             }
-            using (var writer = new StreamWriter(File.OpenWrite(filePath))) {
-                using (Stream resFilestream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(GithubUpdater)}.{nameof(Resources)}.SimpleUpdater.SimpleFileUpdater{(adminVersion ? "_admin" : "")}.exe")) {
-                    if (resFilestream != null) {
-                        resFilestream.CopyTo(writer.BaseStream);
+            if (!Directory.Exists(directoryPath)) {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            var resourceNamespace = $"{nameof(GithubUpdater)}.{nameof(Resources)}.SimpleFileUpdater{(coreVersion ? "_core" : adminVersion ? "_admin" : "")}.";
+            var resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(n => n.StartsWith(resourceNamespace));
+
+            string mainFileName = null;
+            
+            foreach (var resourceName in resourceNames) {
+                var fileName = Path.GetFileName(resourceName);
+                if (string.IsNullOrEmpty(fileName)) {
+                    continue;
+                }
+                
+                fileName = fileName.Replace(resourceNamespace, "");
+                if (fileName.EndsWith(".exe") || fileName.EndsWith(".dll")) {
+                    mainFileName = fileName;
+                }
+                
+                using (var writer = new StreamWriter(File.OpenWrite(Path.Combine(directoryPath, fileName)))) {
+                    using (Stream resFileStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)) {
+                        resFileStream?.CopyTo(writer.BaseStream);
                     }
                 }
             }
+
+            return Path.Combine(directoryPath, mainFileName ?? "");
         }
     }
 }

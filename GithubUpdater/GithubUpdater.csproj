@@ -1,110 +1,52 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup Label="Basic info">
-    <!-- Exe or Library-->
-    <OutputType>Library</OutputType>
-    <AssemblyName>GithubUpdater</AssemblyName>
-    <!-- RepositoryName is a custom variable, should be the name of the github repo -->
-    <RepositoryName>GithubUpdater</RepositoryName>
-    <RootNamespace>$(AssemblyName)</RootNamespace>
-    <Version>1.0.0-beta</Version>
-    <!-- Assembly.GetExecutingAssembly().GetName().Version = $(Version) but completed if necessary to make a 4 digit version and without what is after the dash -->
-    <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion = $(Version) -->
-    <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion = $(FileVersion) -->
-    <FileVersion>$(VersionPrefix)</FileVersion>
-    <!-- this will be the product name-->
-    <Product>$(AssemblyName)</Product>
-    <!-- this will be the file description -->
-    <AssemblyTitle>Update your software through github releases.</AssemblyTitle>
-    <Copyright>Copyright (c) 2018 - Julien Caillon - GNU General Public License v3</Copyright>
-    <ApplicationIcon>
-    </ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup Label="Package info basic">
-    <Company>Noyacode</Company>
-    <Authors>jcailon</Authors>
-    <PackageId>$(Company).$(AssemblyName)</PackageId>
-    <!-- Small text that will appear under the package name in nuget -->
-    <Title>$(AssemblyName)</Title>
-    <!-- The package description -->
-    <Description>$(AssemblyTitle)</Description>
-  </PropertyGroup>
-  <PropertyGroup Label="Package info">
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageVersion>$(Version)</PackageVersion>
-    <PackageTags>update updater github releases release api software install installation</PackageTags>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <PackageProjectUrl>https://jcaillon.github.io/$(RepositoryName)</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/jcaillon/$(RepositoryName)/master/docs/logo.png</PackageIconUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/jcaillon/$(RepositoryName).git</RepositoryUrl>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <PackageReleaseNotes><![CDATA[
-Learn more about this project on github: $(PackageProjectUrl).
 
-See more details about this release on github: https://github.com/jcaillon/$(RepositoryName)/releases.]]>
-    </PackageReleaseNotes>
-    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <!-- allow pdb to be packed with the the nuget package (instead of having a separate pack for debug symbols) -->
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSource>true</IncludeSource>
-    <IncludeSymbols>true</IncludeSymbols>
-    <IsPackable>true</IsPackable>
-  </PropertyGroup>
-  <!-- https://github.com/dotnet/sourcelink -->
-  <ItemGroup Label="PackageReference specific for your source control provider">
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Resources\SimpleUpdater\" />
-  </ItemGroup>
-  <PropertyGroup Label="Compilation info">
+  <!-- ============================================================= -->
+  <!-- PROJECT PROPERTIES -->
+  <!-- ============================================================= -->
+
+  <PropertyGroup Label="Custom project variables">
+    <!-- Type or assembly to produce Exe/Library -->
+    <ProjOutputType>Library</ProjOutputType>
+    <!-- The name of the assembly .dll/.exe -->
+    <ProjAssemblyName>GithubUpdater</ProjAssemblyName>
+    <!-- major.minor.patch[.build][-pre-release-tag] -->
+    <ProjVersion>1.0.0-beta</ProjVersion>
+    <ProjFileDescription>Update your software through github releases.</ProjFileDescription>
+    <ProjCompany>Noyacode</ProjCompany>
+    <ProjAuthor>jcaillon</ProjAuthor>
+    <ProjApplicationIcon></ProjApplicationIcon>
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
-    <Platform>Any Cpu</Platform>
-    <Configuration>Release</Configuration>
-    <SolutionDir Condition=" $(SolutionDir) == ''">..\</SolutionDir>
-    <DebugSymbols>true</DebugSymbols>
-    <Optimize Condition=" '$(Configuration)' == 'Release' ">true</Optimize>
+    <ProjDefaultTargetFrameworks>net461;netstandard2.0</ProjDefaultTargetFrameworks>
+    <!-- ==== Package ==== -->
+    <!-- 64x64 image with transparent background to use as the icon -->
+    <ProjPackageIconPath>docs/images/logo.png</ProjPackageIconPath>
+    <ProjPackageDescription>$(ProjFileDescription)</ProjPackageDescription>
+    <!-- A space?-delimited list of tags that designates the package. -->
+    <ProjPackageTags>$(ProjAssemblyName) update updater github releases release api software install installation</ProjPackageTags>
+    <!-- ==== Extra ==== -->
+    <!-- https://spdx.org/licenses/ (column identifier) -->
+    <ProjLicence>GPL-3.0-or-later</ProjLicence>
+    <ProjProductVersion>$(ProjVersion)</ProjProductVersion>
+    <ProjProductName>$(ProjAssemblyName)</ProjProductName>
+    <ProjRepositoryName>$(ProjAssemblyName)</ProjRepositoryName>
+    <ProjRepositoryOwner>$(ProjAuthor)</ProjRepositoryOwner>
+    <ProjRootNamespace>$(ProjAssemblyName)</ProjRootNamespace>
+    <ProjCopyright>Copyright (c) $([System.DateTime]::Now.ToString(yyyy)) - $(ProjAuthor)</ProjCopyright>
   </PropertyGroup>
-  <PropertyGroup Label="Extra stuff">
-    <DefineConstants Condition=" '$(TargetFramework)'=='net461' ">$(DefineConstants);NET461;WINDOWSONLYBUILD</DefineConstants>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- throw an exception on overflow instead of failing quietly -->
-    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <!-- DebugType -->
-  <!-- Need to be full if you want .pdb files to work for .net framework <= 4.7.1, otherwise portable is ok -->
-  <!-- pdbonly = you get line numbers, full = you can attach the debugger! so use pdbonly for releases, none/embedded/portable -->
-  <!-- portable = new .pdb format to use since dotnet and >= 4.7.1, embedded = same as portable excepct the .pdb is inside the .dll -->
-  <Choose>
-    <When Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcoreapp'))">
-      <PropertyGroup>
-        <DebugType>embedded</DebugType>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <Choose>
-        <When Condition=" '$(Configuration)'=='Debug' ">
-          <PropertyGroup>
-            <DebugType>full</DebugType>
-          </PropertyGroup>
-        </When>
-        <Otherwise>
-          <PropertyGroup>
-            <DebugType>pdbonly</DebugType>
-          </PropertyGroup>
-        </Otherwise>
-      </Choose>
-    </Otherwise>
-  </Choose>
+
+  <!-- Common properties -->
+  <Import Project="Properties.common.target" />
+
+  <!-- ============================================================= -->
+  <!-- PROJECT SPECIFIC -->
+  <!-- ============================================================= -->
 
   <ItemGroup Label="Resources">
-    <EmbeddedResource Include="Resources\SimpleUpdater\*.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_admin\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.dll" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.deps.json" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.runtimeconfig.json" />
   </ItemGroup>
   
 </Project>
