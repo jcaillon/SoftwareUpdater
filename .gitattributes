@@ -28,9 +28,10 @@
 
 # Force the following filetypes to have unix eols
 *.sh text eol=lf
+*.md text eol=lf
 
 # Force the following to have windows eols
-*.md text eol=lf
+*.sln text eol=crlf
 
 # The following filetypes will not have eol replacement and will not generate text diff
 # binary is a "macro" for -text -diff

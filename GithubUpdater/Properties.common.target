@@ -57,7 +57,7 @@
     <PackageReleaseNotes><![CDATA[
 Learn more about this project on github: $(PackageProjectUrl).
 
-See more details about this release on github: https://github.com/$(ProjRepositoryOwner)/$(ProjRepositoryName)/releases.]]>
+See more details about this release on github: https://github.com/$(ProjRepositoryOwner)/$(ProjRepositoryName)/releases/tag/v$(ProjVersion).]]>
     </PackageReleaseNotes>
     <PackageOutputPath>$(OutputPath)</PackageOutputPath>
     <!-- allow pdb to be packed with the the nuget package (instead of having a separate pack for debug symbols) -->

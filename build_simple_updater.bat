@@ -76,6 +76,8 @@ REM - -------------------------------------
 echo.=========================
 echo.[%time:~0,8% ERRO] ENDED IN ERROR, ERRORLEVEL = %errorlevel%
 
-pause
+if "%IS_CI_BUILD%"=="false" (
+	pause
+)
 
 exit /b 1
