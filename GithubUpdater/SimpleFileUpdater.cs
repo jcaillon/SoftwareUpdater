@@ -2,17 +2,17 @@
 // ========================================================================
 // Copyright (c) 2018 - Julien Caillon (julien.caillon@gmail.com)
 // This file (SimpleFileUpdater.cs) is part of GithubUpdater.
-// 
+//
 // GithubUpdater is a free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // GithubUpdater is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with GithubUpdater. If not, see <http://www.gnu.org/licenses/>.
 // ========================================================================
@@ -23,6 +23,10 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using GithubUpdater.Utilities;
+
+#if WINDOWSONLYBUILD
+using System.Security.Principal;
+#endif
 
 [assembly: InternalsVisibleTo("GithubUpdater.Test")]
 
@@ -122,11 +126,11 @@ namespace GithubUpdater {
             if (!Directory.Exists(_exeDirectoryPath)) {
                 Directory.CreateDirectory(_exeDirectoryPath);
             }
-            
+
             var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, _exeDirectoryPath);
             var actionFilePath = Path.Combine(_exeDirectoryPath, Path.GetRandomFileName());
             File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
-            
+
             _process = new Process {
                 StartInfo = {
                     FileName = DotNet.IsNetStandardBuild ? DotNet.FullPathOrDefault() : _exeDirectoryPath,
@@ -146,6 +150,10 @@ namespace GithubUpdater {
 
         private static bool IsDirectoryWritable(string dirPath) {
             try {
+                if (IsElevated) {
+                    // maybe we would be able to write it because we are admin at the moment...
+                    return false;
+                }
                 var tempPath = Path.Combine(dirPath, Path.GetRandomFileName());
                 File.WriteAllText(tempPath, "");
                 File.Delete(tempPath);
@@ -154,6 +162,18 @@ namespace GithubUpdater {
                 return false;
             }
         }
-        
+
+        private static bool IsElevated {
+            get {
+#if WINDOWSONLYBUILD
+                try {
+                    return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+                } catch (Exception) {
+                    // ignored
+                }
+#endif
+                return false;
+            }
+        }
     }
 }
