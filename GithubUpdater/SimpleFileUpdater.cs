@@ -26,6 +26,7 @@ using GithubUpdater.Utilities;
 
 #if WINDOWSONLYBUILD
 using System.Security.Principal;
+using System.Security.AccessControl;
 #endif
 
 [assembly: InternalsVisibleTo("GithubUpdater.Test")]
@@ -106,8 +107,7 @@ namespace GithubUpdater {
             if (string.IsNullOrEmpty(from) || !File.Exists(from) || string.IsNullOrEmpty(to)) {
                 return false;
             }
-            var destinationDirectory = Path.GetDirectoryName(to);
-            if (Directory.Exists(destinationDirectory) && !IsDirectoryWritable(destinationDirectory)) {
+            if (!FilePathHasWritePermission(to)) {
                 _requireAdminExe = true;
             }
             if (_output == null) {
@@ -148,32 +148,50 @@ namespace GithubUpdater {
             _process.WaitForExit();
         }
 
-        private static bool IsDirectoryWritable(string dirPath) {
-            try {
-                if (IsElevated) {
-                    // maybe we would be able to write it because we are admin at the moment...
-                    return false;
-                }
-                var tempPath = Path.Combine(dirPath, Path.GetRandomFileName());
-                File.WriteAllText(tempPath, "");
-                File.Delete(tempPath);
-                return true;
-            } catch (Exception) {
+	    /// <summary>
+        /// Returns true if a file path is writable with the current user.
+        /// </summary>
+        /// <param name="filePath">Full path to file to test.</param>
+        /// <returns>State [bool]</returns>
+        public static bool FilePathHasWritePermission(string filePath) {
+            #if NETFRAMEWORK
+            if (string.IsNullOrEmpty(filePath)) {
                 return false;
             }
+            FileSystemRights accessRight;
+            if (!File.Exists(filePath)) {
+				filePath = Path.GetDirectoryName(filePath);
+                accessRight = FileSystemRights.CreateFiles;
+	            while (!Directory.Exists(filePath)) {
+	                filePath = Path.GetDirectoryName(filePath);
+	                accessRight = FileSystemRights.CreateDirectories | FileSystemRights.CreateFiles;
+	            }
+            } else {
+                accessRight = FileSystemRights.Write;
+            }
+            try {
+                return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), accessRight);
+            } catch {
+                return false;
+            }
+            #else
+            return false;
+            #endif
         }
 
-        private static bool IsElevated {
-            get {
-#if WINDOWSONLYBUILD
-                try {
-                    return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-                } catch (Exception) {
-                    // ignored
+#if NETFRAMEWORK
+        private static bool IsCurrentUserMatchingRule(AuthorizationRuleCollection rules, FileSystemRights accessRight) {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            foreach (FileSystemAccessRule rule in rules) {
+                if (identity?.Groups != null && identity.Groups.Contains(rule.IdentityReference)) {
+                    if ((accessRight & rule.FileSystemRights) == accessRight) {
+                        if (rule.AccessControlType == AccessControlType.Allow)
+                            return true;
+                    }
                 }
-#endif
-                return false;
             }
+            return false;
         }
+#endif
     }
 }
