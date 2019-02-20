@@ -66,13 +66,13 @@ namespace GithubUpdater.Http {
         }
 
         /// <summary>
-        /// Use an http proxy for your requests.
+        /// Use an http proxy for your requests. (would be <see cref="WebRequest.DefaultWebProxy"/> by default).
         /// </summary>
         /// <remarks>
         /// If you intend to use a locally served proxy, don't use 127.0.0.1 or localhost but use your machine name instead.
         /// That is because .net framework is hardcoded to not sent req for localhost through the proxy.
         /// </remarks>
-        /// <param name="address">Can be null for a null proxy.</param>
+        /// <param name="address">Can be null for a null proxy (direct connection).</param>
         /// <param name="userName">domain\user. Can be null if no credentials are needed.</param>
         /// <param name="userPassword"></param>
         /// <param name="bypassProxyOnLocal"></param>
