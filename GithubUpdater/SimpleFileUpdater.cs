@@ -67,7 +67,7 @@ namespace GithubUpdater {
         public bool TryToCleanLastExe() {
             if (Directory.Exists(_exeDirectoryPath)) {
                 try {
-                    Directory.Delete(_exeDirectoryPath);
+                    Directory.Delete(_exeDirectoryPath, true);
                 } catch (Exception) {
                     // ignore
                 }
@@ -133,7 +133,7 @@ namespace GithubUpdater {
 
             _process = new Process {
                 StartInfo = {
-                    FileName = DotNet.IsNetStandardBuild ? DotNet.FullPathOrDefault() : _exeDirectoryPath,
+                    FileName = DotNet.IsNetStandardBuild ? DotNet.FullPathOrDefault() : executablePath,
                     Arguments = $"{(DotNet.IsNetStandardBuild ? $"{Path.GetFileName(executablePath)} " : "")}--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = !DotNet.IsNetStandardBuild,
@@ -145,7 +145,11 @@ namespace GithubUpdater {
         }
 
         internal void WaitForProcessExit() {
-            _process.WaitForExit();
+            try {
+                _process.WaitForExit();
+            } catch (InvalidOperationException) {
+                // ignored
+            }
         }
 
 	    /// <summary>
