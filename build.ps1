@@ -72,7 +72,7 @@ function Publish-SimpleUpdate {
 
 	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.binlog" "/p:AdminManifest=false" "/p:TargetFramework=net20" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 
-	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.binlog" "/p:AdminManifest=true" "/p:TargetFramework=net20" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
+	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.admin.binlog" "/p:AdminManifest=true" "/p:TargetFramework=net20" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 
 	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/netcoreapp2.0.binlog" "/p:AdminManifest=false" "/p:TargetFramework=netcoreapp2.0" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 }
