@@ -2,7 +2,7 @@
 
 Updating software through github releases.
 
-[![logo](docs/logo.png)](https://jcaillon.github.io/GithubUpdater/)
+[![logo](docs/images/logo.png)](https://jcaillon.github.io/GithubUpdater/)
 
 Status | Info
 ------ | --------
