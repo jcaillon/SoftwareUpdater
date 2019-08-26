@@ -10,6 +10,8 @@ param (
 )
 
 function Main {
+
+    Write-Host "APPVEYOR_REPO_TAG_NAME = $env:APPVEYOR_REPO_TAG_NAME"
     # inspired by ci script from https://github.com/datalust/piggy.
 	# inspired by ci script from https://github.com/Azure/azure-functions-core-tools.
     $path = $ProjectOrSolutionPath	
@@ -17,7 +19,7 @@ function Main {
     $isReleaseBuild = [string]::IsNullOrEmpty($ciTag)
     [string] $versionToBuild = $NULL
     if ($isReleaseBuild) {
-        $versionToBuild = If ($ciTag.StartsWith('v')) {$ciTag.SubString(1)} Else {$env:ciTag}
+        $versionToBuild = If ($ciTag.StartsWith('v')) {$ciTag.SubString(1)} Else {$ciTag}
     }
 	Write-Host "Building $(If ([string]::IsNullOrEmpty($versionToBuild)) { "default version" } Else { " version $versionToBuild" } )"
 
