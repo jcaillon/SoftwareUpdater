@@ -29,6 +29,7 @@ using System.Runtime.InteropServices;
 #endif
 
 namespace GithubUpdater.Utilities {
+
     /// <summary>
     /// Utilities for finding the "dotnet.exe" file from the currently running .NET Core application.
     /// Credits go to: https://github.com/natemcmaster/CommandLineUtils.

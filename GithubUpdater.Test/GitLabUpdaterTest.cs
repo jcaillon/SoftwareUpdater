@@ -23,16 +23,17 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using GithubUpdater.GitHub;
+using GithubUpdater.GitLab;
 using GithubUpdater.Test.HttpUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace GithubUpdater.Test {
 
     [TestClass]
-    public class GithubUpdaterTest {
+    public class GitLabUpdaterTest {
 
         private static string _testFolder;
-        private static string TestFolder => _testFolder ?? (_testFolder = TestHelper.GetTestFolder(nameof(GithubUpdaterTest)));
+        private static string TestFolder => _testFolder ?? (_testFolder = TestHelper.GetTestFolder(nameof(GitLabUpdaterTest)));
 
         [ClassInitialize]
         public static void Init(TestContext context) {
@@ -62,69 +63,62 @@ namespace GithubUpdater.Test {
             var baseDir = Path.Combine(TestFolder, "http");
             Directory.CreateDirectory(baseDir);
 
-            var githubServer = new SimpleGithubServer(baseDir, "admin");
+            var gitLabServer = new SimpleGitLabServer(baseDir, "admin");
             var proxyServer = new SimpleHttpProxyServer("jucai69d", "julien caillon");
 
             var cts = new CancellationTokenSource();
-            var task1 = HttpServer.ListenAsync(8084, cts.Token, githubServer.OnHttpRequest, true);
-            var task2 = HttpServer.ListenAsync(8085, cts.Token, proxyServer.OnHttpRequest, true);
+            var task1 = HttpServer.ListenAsync(8086, cts.Token, gitLabServer.OnHttpRequest, true);
+            var task2 = HttpServer.ListenAsync(8087, cts.Token, proxyServer.OnHttpRequest, true);
 
             // do
-            githubServer.Releases = new List<GitHubRelease> {
-                new GitHubRelease {
-                    Name = "rel1",
+            gitLabServer.Tags = new List<GitLabTag> {
+                new GitLabTag {
                     TagName = "v1.0.1-beta",
-                    Prerelease = true,
-                    ZipballUrl = "file.v1.0",
-                    CreatedAt = $"{DateTime.UtcNow:s}Z",
-                    Assets = new List<GitHubAsset> {
-                        new GitHubAsset {
-                            Name = "asset1"
-                        },
-                        new GitHubAsset {
-                            Name = "asset2"
-                        }
+                    TagMessage = "rel1",
+                    TagSha1 = "1",
+                    Release = new GitLabRelease {
+                        TagName = "",
+                        Description = "Description"
                     }
                 },
-                new GitHubRelease {
-                    Name = "rel2",
+                new GitLabTag {
                     TagName = "v1.1.0",
-                    Prerelease = false
+                    TagMessage = "rel2",
+                    TagSha1 = "2"
                 },
-                new GitHubRelease {
-                    Name = "rel3",
+                new GitLabTag {
                     TagName = "v1.2.1-beta",
-                    Prerelease = true
+                    TagMessage = "rel3",
+                    TagSha1 = "3"
                 },
-                new GitHubRelease {
-                    Name = "rel5",
+                new GitLabTag {
                     TagName = "v3.0.0",
-                    Prerelease = false
+                    TagMessage = "rel5",
+                    TagSha1 = "5"
                 },
-                new GitHubRelease {
-                    Name = "rel4",
+                new GitLabTag {
                     TagName = "v2.0.0",
-                    Prerelease = false
+                    TagMessage = "rel4",
+                    TagSha1 = "4"
                 }
             };
 
-            var updater = new GitHubUpdater();
-            updater.UseAuthorizationToken("admin");
-            updater.UseAlternativeBaseUrl($"http://{host}:8084");
-            updater.UseProxy($"http://{host}:8085/", "jucai69d", "julien caillon");
-            updater.SetRepo("3pUser", "yolo");
-            updater.UseMaxNumberOfReleasesToFetch(10);
+            var updater = new GitLabUpdater($"http://{host}:8086");
+            updater.UsePrivateToken("admin");
+            updater.UseProxy($"http://{host}:8087/", "jucai69d", "julien caillon");
+            updater.SetProjectId("test/truc");
+            updater.UseMaxNumberOfTagsToFetch(10);
 
-            var releases = updater.FetchNewReleases(UpdaterHelper.StringToVersion("0"));
-            Assert.AreEqual(5, releases.Count);
-            Assert.AreEqual("rel5", releases[0].Name);
+            var tags = updater.FetchNewReleases(UpdaterHelper.StringToVersion("0"));
+            Assert.AreEqual(5, tags.Count);
+            Assert.AreEqual("rel5", tags[0].TagMessage);
 
-            releases = updater.FetchNewReleases(UpdaterHelper.StringToVersion("3"));
-            Assert.AreEqual(0, releases.Count);
+            tags = updater.FetchNewReleases(UpdaterHelper.StringToVersion("3"));
+            Assert.AreEqual(0, tags.Count);
 
-            releases = updater.FetchNewReleases(UpdaterHelper.StringToVersion("1.2"));
-            Assert.AreEqual(3, releases.Count);
-            Assert.AreEqual("rel5", releases[0].Name);
+            tags = updater.FetchNewReleases(UpdaterHelper.StringToVersion("1.2"));
+            Assert.AreEqual(3, tags.Count);
+            Assert.AreEqual("rel5", tags[0].TagMessage);
 
             File.WriteAllText(Path.Combine(baseDir, "testFile"), "cc");
             var countProgress = 0;
@@ -133,6 +127,14 @@ namespace GithubUpdater.Test {
             Assert.IsTrue(countProgress > 0);
             Assert.IsTrue(File.Exists(dlPath));
             Assert.AreEqual(File.ReadAllText(Path.Combine(baseDir, "testFile")), File.ReadAllText(dlPath));
+
+            File.Delete(dlPath);
+
+            countProgress = 0;
+            dlPath = updater.DownloadRepositoryArchive("mysha1", progress => countProgress++);
+            Assert.IsTrue(countProgress > 0);
+            Assert.IsTrue(File.Exists(dlPath));
+            Assert.AreEqual(new FileInfo(dlPath).Length, 10);
 
             File.Delete(dlPath);
 
