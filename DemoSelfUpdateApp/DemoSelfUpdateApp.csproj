@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GithubUpdater.Test\GithubUpdater.Test.csproj" />
-    <ProjectReference Include="..\GithubUpdater\GithubUpdater.csproj" />
+    <ProjectReference Include="..\SoftwareUpdater.Test\SoftwareUpdater.Test.csproj" />
+    <ProjectReference Include="..\SoftwareUpdater\SoftwareUpdater.csproj" />
   </ItemGroup>
 
 </Project>

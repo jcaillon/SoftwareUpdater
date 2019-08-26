@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- ============================================================= -->
   <!-- PROJECT PROPERTIES -->
@@ -6,23 +6,23 @@
 
   <PropertyGroup Label="Custom project variables">
     <!-- Type or assembly to produce Exe/Library -->
-    <ProjOutputType>Exe</ProjOutputType>
+    <ProjOutputType>Library</ProjOutputType>
     <!-- The name of the assembly .dll/.exe -->
-    <ProjAssemblyName>SimpleFileUpdater</ProjAssemblyName>
+    <ProjAssemblyName>SoftwareUpdater</ProjAssemblyName>
     <!-- major.minor.patch[.build][-pre-release-tag] -->
     <ProjVersion>1.0.0-beta</ProjVersion>
-    <ProjFileDescription>Simply update files after an application has closed.</ProjFileDescription>
+    <ProjFileDescription>Update your software through github releases.</ProjFileDescription>
     <ProjCompany>Noyacode</ProjCompany>
     <ProjAuthor>jcaillon</ProjAuthor>
-    <ProjApplicationIcon>app.ico</ProjApplicationIcon>
+    <ProjApplicationIcon></ProjApplicationIcon>
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
-    <ProjDefaultTargetFrameworks>net20;netcoreapp2.0</ProjDefaultTargetFrameworks>
+    <ProjDefaultTargetFrameworks>net461;netstandard2.0</ProjDefaultTargetFrameworks>
     <!-- ==== Package ==== -->
     <!-- 64x64 image with transparent background to use as the icon -->
     <ProjPackageIconPath>docs/images/logo.png</ProjPackageIconPath>
     <ProjPackageDescription>$(ProjFileDescription)</ProjPackageDescription>
     <!-- A space?-delimited list of tags that designates the package. -->
-    <ProjPackageTags>$(ProjAssemblyName) library</ProjPackageTags>
+    <ProjPackageTags>$(ProjAssemblyName) update updater github releases release api software install installation</ProjPackageTags>
     <!-- ==== Extra ==== -->
     <!-- https://spdx.org/licenses/ (column identifier) -->
     <ProjLicence>GPL-3.0-or-later</ProjLicence>
@@ -40,27 +40,13 @@
   <!-- ============================================================= -->
   <!-- PROJECT SPECIFIC -->
   <!-- ============================================================= -->
-  
-  <PropertyGroup Label="manifest">
-    <AdminManifest Condition=" '$(AdminManifest)'=='' ">false</AdminManifest>
-    <ApplicationManifest Condition=" $(AdminManifest) ">app.admin.manifest</ApplicationManifest>
-    <ApplicationManifest Condition=" !$(AdminManifest) ">app.user.manifest</ApplicationManifest>
-  </PropertyGroup>
 
-  <ItemGroup Label="Conditional references" Condition=" !$(IsNetStandard) ">
-    <Reference Include="System.Windows.Forms" />
+  <ItemGroup Label="Resources">
+    <EmbeddedResource Include="Resources\SimpleFileUpdater\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_admin\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.dll" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.deps.json" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.runtimeconfig.json" />
   </ItemGroup>
-
-  <PropertyGroup Label="ReleaseDirectoryName">
-    <ReleaseDirectoryName>$(AssemblyName)</ReleaseDirectoryName>
-    <ReleaseDirectoryName Condition=" $(IsNetStandard) ">$(ReleaseDirectoryName)_core</ReleaseDirectoryName>
-    <ReleaseDirectoryName Condition=" $(AdminManifest) ">$(ReleaseDirectoryName)_admin</ReleaseDirectoryName>
-    <ReleaseBinPath>..\..\SoftwareUpdater\Resources\$(ReleaseDirectoryName)</ReleaseBinPath>
-    <ZipCopiedOutput>false</ZipCopiedOutput>
-  </PropertyGroup>
-
-
-  <!-- Extra targets -->
-  <Import Project="Target.*.target" />
-
+  
 </Project>

@@ -2,7 +2,7 @@
 
 Updating software through github releases.
 
-[![logo](images/logo.png)](https://github.com/jcaillon/GithubUpdater)
+[![logo](images/logo.png)](https://github.com/jcaillon/SoftwareUpdater)
 
 ## About
 
@@ -17,9 +17,9 @@ Basically, this library provides a simple way to:
 Check the project `DemoSelfUpdateApp` in the repository to see a working example.
 
 ```csharp
-updater = new GitHubUpdater();
+updater = new SoftwareUpdater();
             
-updater.SetRepo("jcaillon", "GithubUpdater");
+updater.SetRepo("jcaillon", "SoftwareUpdater");
 updater.UseCancellationToken(new CancellationTokenSource(3000).Token);
 updater.UseMaxNumberOfReleasesToFetch(10);
 

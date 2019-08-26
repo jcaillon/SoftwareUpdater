@@ -1,6 +1,6 @@
 param ( 
 	[string]
-	$ProjectOrSolutionPath = "GithubUpdater\GithubUpdater.csproj",
+	$ProjectOrSolutionPath = "SoftwareUpdater\SoftwareUpdater.csproj",
 	[bool]
 	$TestOnly = $False,
 	[bool]
