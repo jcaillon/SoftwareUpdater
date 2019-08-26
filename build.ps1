@@ -14,14 +14,14 @@ function Main {
 	# inspired by ci script from https://github.com/Azure/azure-functions-core-tools.
     $path = $ProjectOrSolutionPath	
 
-	[string] $ciTag = If (![string]::IsNullOrEmpty($env:CI_COMMIT_TAG)) {$env:CI_COMMIT_TAG} Else {$env:APPVEYOR_REPO_TAG_NAME}
-    $isReleaseBuild = [string]::IsNullOrEmpty($ciTag)
+	[string] $ciTag = If ([string]::IsNullOrEmpty($env:APPVEYOR_REPO_TAG_NAME)) {$env:CI_COMMIT_TAG} Else {$env:APPVEYOR_REPO_TAG_NAME}
+    $isReleaseBuild = ![string]::IsNullOrEmpty($ciTag)
     [string] $versionToBuild = $NULL
     if ($isReleaseBuild) {
         $versionToBuild = If ($ciTag.StartsWith('v')) {$ciTag.SubString(1)} Else {$ciTag}
     }
 
-	Write-Host "Building $(If ([string]::IsNullOrEmpty($versionToBuild)) { "default version" } Else { " version $versionToBuild" } )"
+	Write-Host "Building $(If ([string]::IsNullOrEmpty($versionToBuild)) { "default version" } Else { "version $versionToBuild" } )"
 
 	Push-Location $PSScriptRoot
 	if ($TestOnly) {
