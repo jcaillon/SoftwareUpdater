@@ -80,7 +80,7 @@ namespace SimpleFileUpdater {
             }
 
             if (string.IsNullOrEmpty(actionFilePath) || !File.Exists(actionFilePath)) {
-#if WINDOWSONLYBUILD 
+#if WINDOWSONLYBUILD
                 MessageBox.Show("The action file specified with argument --action-file ACTIONFILE must exist.", "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 #else
                 Console.WriteLine("The action file specified with argument --action-file ACTIONFILE must exist.");
@@ -94,7 +94,7 @@ namespace SimpleFileUpdater {
 #else
             Task.Delay(waitForCloseInMs ?? 500).Wait();
 #endif
-            
+
             using (StringReader reader = new StringReader(File.ReadAllText(actionFilePath, Encoding.Default))) {
                 string line;
                 while ((line = reader.ReadLine()) != null) {
@@ -134,9 +134,9 @@ namespace SimpleFileUpdater {
                         }
                     } catch (Exception e) {
 #if WINDOWSONLYBUILD
-                        MessageBox.Show("The update failed:\n" + e.Message, "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("The update failed:\n" + e.Message + "\n\nPlease check your file permissions.\n\nFull exception stack:\n" + e, "Update error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 #else
-                        Console.WriteLine("The update failed:\n" + e.Message);
+                        Console.WriteLine("The update failed:\n" + e.Message + "\n\nPlease check your file permissions.\n\nFull exception stack:\n" + e);
                         Console.ReadKey();
 #endif
                         return 1;

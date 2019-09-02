@@ -44,16 +44,21 @@ namespace SoftwareUpdater {
         /// Get the singleton instance of the updater.
         /// </summary>
         public static SimpleFileUpdater Instance => _instance ?? (_instance = new SimpleFileUpdater());
-
-        private readonly string _exeDirectoryPath = Path.Combine(Path.GetTempPath(), "SimpleFileUpdater");
         private bool _requireAdminExe;
         private StringBuilder _output;
         private Process _process;
+
+        private string ExeDirectoryPath => Path.Combine(Path.GetTempPath(), UpdaterExecutableSubDirectory ?? "", "SimpleFileUpdater");
 
         /// <summary>
         /// new instance.
         /// </summary>
         private SimpleFileUpdater() { }
+
+        /// <summary>
+        /// Overload the sub directory in the temporary directory where to create the SimpleFileUpdater executable.
+        /// </summary>
+        public string UpdaterExecutableSubDirectory { get; set; }
 
         /// <summary>
         /// Will the updater need admin rights to do its job?
@@ -65,9 +70,11 @@ namespace SoftwareUpdater {
         /// </summary>
         /// <returns></returns>
         public bool TryToCleanLastExe() {
-            if (Directory.Exists(_exeDirectoryPath)) {
+            var exeDirectoryPath = ExeDirectoryPath;
+            if (Directory.Exists(exeDirectoryPath)) {
                 try {
-                    Directory.Delete(_exeDirectoryPath, true);
+                    Directory.Delete(exeDirectoryPath, true);
+                    return true;
                 } catch (Exception) {
                     // ignore
                 }
@@ -123,12 +130,13 @@ namespace SoftwareUpdater {
         /// <param name="pidToWait"></param>
         /// <param name="delayBeforeActionInMilliseconds"></param>
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
-            if (!Directory.Exists(_exeDirectoryPath)) {
-                Directory.CreateDirectory(_exeDirectoryPath);
+            var exeDirectoryPath = ExeDirectoryPath;
+            if (!Directory.Exists(exeDirectoryPath)) {
+                Directory.CreateDirectory(exeDirectoryPath);
             }
 
-            var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, _exeDirectoryPath);
-            var actionFilePath = Path.Combine(_exeDirectoryPath, Path.GetRandomFileName());
+            var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, exeDirectoryPath);
+            var actionFilePath = Path.Combine(exeDirectoryPath, Path.GetRandomFileName());
             File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
 
             _process = new Process {
@@ -137,7 +145,7 @@ namespace SoftwareUpdater {
                     Arguments = $"{(DotNet.IsNetStandardBuild ? $"{Path.GetFileName(executablePath)} " : "")}--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = !DotNet.IsNetStandardBuild,
-                    WorkingDirectory = _exeDirectoryPath,
+                    WorkingDirectory = exeDirectoryPath,
                     Verb = _requireAdminExe ? "runas" : ""
                 }
             };
@@ -158,29 +166,35 @@ namespace SoftwareUpdater {
         /// <param name="filePath">Full path to file to test.</param>
         /// <returns>State [bool]</returns>
         public static bool FilePathHasWritePermission(string filePath) {
-            #if NETFRAMEWORK
-            if (string.IsNullOrEmpty(filePath)) {
-                return false;
-            }
-            FileSystemRights accessRight;
-            if (!File.Exists(filePath)) {
-				filePath = Path.GetDirectoryName(filePath);
-                accessRight = FileSystemRights.CreateFiles;
-	            while (!Directory.Exists(filePath)) {
-	                filePath = Path.GetDirectoryName(filePath);
-	                accessRight = FileSystemRights.CreateDirectories | FileSystemRights.CreateFiles;
-	            }
-            } else {
-                accessRight = FileSystemRights.Write;
-            }
+#if NETFRAMEWORK
             try {
+                if (string.IsNullOrEmpty(filePath)) {
+                    return false;
+                }
+                FileSystemRights accessRight;
+                if (!File.Exists(filePath)) {
+				    filePath = Path.GetDirectoryName(filePath);
+                    accessRight = FileSystemRights.CreateFiles;
+	                while (!Directory.Exists(filePath)) {
+	                    filePath = Path.GetDirectoryName(filePath);
+	                    accessRight = FileSystemRights.CreateDirectories | FileSystemRights.CreateFiles;
+	                }
+                    if (new DirectoryInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
+                        return false;
+                    }
+                } else {
+                    accessRight = FileSystemRights.Write;
+                    if (new FileInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
+                        return false;
+                    }
+                }
                 return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), accessRight);
             } catch {
                 return false;
             }
-            #else
+#else
             return false;
-            #endif
+#endif
         }
 
 #if NETFRAMEWORK
