@@ -1,7 +1,7 @@
 ## Improvements
 
-- Added SimpleFileUpdater.AddFileToCopy() method.
+none
 
 ## Fix
 
-- SimpleFileUpdater.Start() can now correctly be called several times without an exception.
+- fix SimpleFileUpdater.Start() to work when being called several time in admin mode, in case the user didn't give the permission to execute SimpleFileUpdater.exe

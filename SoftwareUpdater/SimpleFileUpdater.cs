@@ -148,9 +148,13 @@ namespace SoftwareUpdater {
         /// <param name="delayBeforeActionInMilliseconds"></param>
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
             if (_process != null) {
-                _process?.Kill();
-                _process?.WaitForExit();
-                _process?.Dispose();
+                try {
+                    _process?.Kill();
+                    _process?.WaitForExit();
+                    _process?.Dispose();
+                } catch (Exception) {
+                    // ignored
+                }
                 _process = null;
             }
             var exeDirectoryPath = ExeDirectoryPath;
