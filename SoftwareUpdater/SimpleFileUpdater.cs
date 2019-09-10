@@ -145,6 +145,7 @@ namespace SoftwareUpdater {
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
             if (_process != null) {
                 _process.Kill();
+                _process.WaitForExit();
                 _process.Dispose();
                 _process = null;
             }
