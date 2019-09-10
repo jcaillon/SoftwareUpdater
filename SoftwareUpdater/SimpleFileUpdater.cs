@@ -18,6 +18,7 @@
 // ========================================================================
 #endregion
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -27,6 +28,8 @@ using SoftwareUpdater.Utilities;
 #if WINDOWSONLYBUILD
 using System.Security.Principal;
 using System.Security.AccessControl;
+#else
+using System.Runtime.InteropServices;
 #endif
 
 [assembly: InternalsVisibleTo("SoftwareUpdater.Test")]
@@ -47,6 +50,7 @@ namespace SoftwareUpdater {
         private bool _requireAdminExe;
         private StringBuilder _output;
         private Process _process;
+        private static HashSet<string> _writableDirectories;
 
         private string ExeDirectoryPath => Path.Combine(Path.GetTempPath(), UpdaterExecutableSubDirectory ?? "", "SimpleFileUpdater");
 
@@ -144,9 +148,9 @@ namespace SoftwareUpdater {
         /// <param name="delayBeforeActionInMilliseconds"></param>
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
             if (_process != null) {
-                _process.Kill();
-                _process.WaitForExit();
-                _process.Dispose();
+                _process?.Kill();
+                _process?.WaitForExit();
+                _process?.Dispose();
                 _process = null;
             }
             var exeDirectoryPath = ExeDirectoryPath;
@@ -184,35 +188,47 @@ namespace SoftwareUpdater {
         /// <param name="filePath">Full path to file to test.</param>
         /// <returns>State [bool]</returns>
         public static bool FilePathHasWritePermission(string filePath) {
-#if NETFRAMEWORK
             try {
                 if (string.IsNullOrEmpty(filePath)) {
                     return false;
                 }
-                FileSystemRights accessRight;
                 if (!File.Exists(filePath)) {
-				    filePath = Path.GetDirectoryName(filePath);
-                    accessRight = FileSystemRights.CreateFiles;
-	                while (!Directory.Exists(filePath)) {
-	                    filePath = Path.GetDirectoryName(filePath);
-	                    accessRight = FileSystemRights.CreateDirectories | FileSystemRights.CreateFiles;
+				    var directoryPath = Path.GetDirectoryName(filePath);
+	                while (!Directory.Exists(directoryPath)) {
+	                    directoryPath = Path.GetDirectoryName(directoryPath);
 	                }
-                    if (new DirectoryInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
+                    if (new DirectoryInfo(directoryPath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
                         return false;
                     }
-                } else {
-                    accessRight = FileSystemRights.Write;
-                    if (new FileInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
-                        return false;
+                    if (_writableDirectories == null) {
+#if WINDOWSONLYBUILD
+                        _writableDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+#else
+                        _writableDirectories = new HashSet<string>(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+#endif
                     }
+                    if (_writableDirectories.Contains(directoryPath)) {
+                        return true;
+                    }
+                    using (File.Create(Path.Combine(directoryPath, Path.GetRandomFileName()), 1, FileOptions.DeleteOnClose)) { }
+                    var subDir = Path.Combine(directoryPath, Path.GetRandomFileName());
+                    Directory.CreateDirectory(subDir);
+                    Directory.Delete(subDir);
+                    _writableDirectories.Add(directoryPath);
+                    return true;
                 }
-                return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), accessRight);
+                if (new FileInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
+                    return false;
+                }
+#if NETFRAMEWORK
+                return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), FileSystemRights.Write);
+#else
+                return false;
+#endif
+
             } catch {
                 return false;
             }
-#else
-            return false;
-#endif
         }
 
 #if NETFRAMEWORK

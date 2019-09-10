@@ -1,7 +1,7 @@
 ## Improvements
 
-- Added the possibility to set the subdirectory in which to create the simplue updater executable.
+- Added SimpleFileUpdater.AddFileToCopy() method.
 
 ## Fix
 
-- SimpleFileUpdater.TryToCleanLastExe() now correctly returns true if a deletion was done which can be used to know if an update has been done.
+- SimpleFileUpdater.Start() can now correctly be called several times without an exception.
