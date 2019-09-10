@@ -95,7 +95,6 @@ namespace SoftwareUpdater {
             if (_output == null) {
                 _output = new StringBuilder();
             }
-
             if (string.IsNullOrEmpty(parameters)) {
                 _output.Append("start").Append('\t').Append(pathToExe).AppendLine();
             } else {
@@ -105,12 +104,26 @@ namespace SoftwareUpdater {
         }
 
         /// <summary>
+        /// Allows to copy a file during the update.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns></returns>
+        public bool AddFileToCopy(string from, string to) {
+            return AddFileToMove(from, to, true);
+        }
+
+        /// <summary>
         /// Allows to move a file during the update.
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <returns></returns>
         public bool AddFileToMove(string from, string to) {
+            return AddFileToMove(from, to, false);
+        }
+
+        private bool AddFileToMove(string from, string to, bool isCopy) {
             if (string.IsNullOrEmpty(from) || !File.Exists(from) || string.IsNullOrEmpty(to)) {
                 return false;
             }
@@ -120,7 +133,7 @@ namespace SoftwareUpdater {
             if (_output == null) {
                 _output = new StringBuilder();
             }
-            _output.Append("move").Append('\t').Append(from).Append('\t').Append(to).AppendLine();
+            _output.Append(isCopy ? "copy" : "move").Append('\t').Append(from).Append('\t').Append(to).AppendLine();
             return true;
         }
 
@@ -130,11 +143,15 @@ namespace SoftwareUpdater {
         /// <param name="pidToWait"></param>
         /// <param name="delayBeforeActionInMilliseconds"></param>
         public void Start(int? pidToWait = null, int? delayBeforeActionInMilliseconds = null) {
+            if (_process != null) {
+                _process.Kill();
+                _process.Dispose();
+                _process = null;
+            }
             var exeDirectoryPath = ExeDirectoryPath;
             if (!Directory.Exists(exeDirectoryPath)) {
                 Directory.CreateDirectory(exeDirectoryPath);
             }
-
             var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, exeDirectoryPath);
             var actionFilePath = Path.Combine(exeDirectoryPath, Path.GetRandomFileName());
             File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
