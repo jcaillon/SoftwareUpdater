@@ -111,6 +111,9 @@ namespace SimpleFileUpdater {
                                 break;
                             case 3:
                                 if (File.Exists(splitLine[2])) {
+                                    if (new FileInfo(splitLine[2]).IsReadOnly) {
+                                        File.SetAttributes(splitLine[2], FileAttributes.Normal);
+                                    }
                                     File.Delete(splitLine[2]);
                                 }
 

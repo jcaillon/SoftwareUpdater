@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 namespace SoftwareUpdater {
 
     /// <summary>
-    /// A simple file updater that allows to move files or start a process after the current program has been executed.
+    /// A simple file updater that allows to move/copy files or start a process after the current program has been executed.
     /// </summary>
     public class SimpleFileUpdater {
 
@@ -47,10 +47,11 @@ namespace SoftwareUpdater {
         /// Get the singleton instance of the updater.
         /// </summary>
         public static SimpleFileUpdater Instance => _instance ?? (_instance = new SimpleFileUpdater());
-        private bool _requireAdminExe;
+
         private StringBuilder _output;
         private Process _process;
         private static HashSet<string> _writableDirectories;
+        private string _actionFilePath;
 
         private string ExeDirectoryPath => Path.Combine(Path.GetTempPath(), UpdaterExecutableSubDirectory ?? "", "SimpleFileUpdater");
 
@@ -66,8 +67,10 @@ namespace SoftwareUpdater {
 
         /// <summary>
         /// Will the updater need admin rights to do its job?
+        /// When using <see cref="AddFileToMove"/> or <see cref="AddFileToCopy"/>, the rights needed to write the files
+        /// are checked and this boolean is set to true if needed.
         /// </summary>
-        public bool IsAdminRightsNeeded => _requireAdminExe;
+        public bool IsAdminRightsNeeded { get; private set; }
 
         /// <summary>
         /// Try to clean up the exe used in a previous update.
@@ -114,7 +117,7 @@ namespace SoftwareUpdater {
         /// <param name="to"></param>
         /// <returns></returns>
         public bool AddFileToCopy(string from, string to) {
-            return AddFileToMove(from, to, true);
+            return AddFileToMoveOrCopy(from, to, true);
         }
 
         /// <summary>
@@ -124,15 +127,15 @@ namespace SoftwareUpdater {
         /// <param name="to"></param>
         /// <returns></returns>
         public bool AddFileToMove(string from, string to) {
-            return AddFileToMove(from, to, false);
+            return AddFileToMoveOrCopy(from, to, false);
         }
 
-        private bool AddFileToMove(string from, string to, bool isCopy) {
+        private bool AddFileToMoveOrCopy(string from, string to, bool isCopy) {
             if (string.IsNullOrEmpty(from) || !File.Exists(from) || string.IsNullOrEmpty(to)) {
                 return false;
             }
             if (!FilePathHasWritePermission(to)) {
-                _requireAdminExe = true;
+                IsAdminRightsNeeded = true;
             }
             if (_output == null) {
                 _output = new StringBuilder();
@@ -152,6 +155,9 @@ namespace SoftwareUpdater {
                     _process?.Kill();
                     _process?.WaitForExit();
                     _process?.Dispose();
+                    if (File.Exists(_actionFilePath)) {
+                        File.Delete(_actionFilePath);
+                    }
                 } catch (Exception) {
                     // ignored
                 }
@@ -161,18 +167,18 @@ namespace SoftwareUpdater {
             if (!Directory.Exists(exeDirectoryPath)) {
                 Directory.CreateDirectory(exeDirectoryPath);
             }
-            var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, _requireAdminExe, exeDirectoryPath);
-            var actionFilePath = Path.Combine(exeDirectoryPath, Path.GetRandomFileName());
-            File.WriteAllText(actionFilePath, _output.ToString(), Encoding.Default);
+            var executablePath = Resources.Resources.WriteSimpleFileUpdateFile(DotNet.IsNetStandardBuild, IsAdminRightsNeeded, exeDirectoryPath);
+            _actionFilePath = Path.Combine(exeDirectoryPath, Path.GetRandomFileName());
+            File.WriteAllText(_actionFilePath, _output.ToString(), Encoding.Default);
 
             _process = new Process {
                 StartInfo = {
                     FileName = DotNet.IsNetStandardBuild ? DotNet.FullPathOrDefault() : executablePath,
-                    Arguments = $"{(DotNet.IsNetStandardBuild ? $"{Path.GetFileName(executablePath)} " : "")}--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
+                    Arguments = $"{(DotNet.IsNetStandardBuild ? $"{Path.GetFileName(executablePath)} " : "")}--pid {pidToWait ?? Process.GetCurrentProcess().Id} --action-file \"{_actionFilePath}\"{(delayBeforeActionInMilliseconds != null ? $" --wait {delayBeforeActionInMilliseconds}" : "")}",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = !DotNet.IsNetStandardBuild,
                     WorkingDirectory = exeDirectoryPath,
-                    Verb = _requireAdminExe ? "runas" : ""
+                    Verb = IsAdminRightsNeeded ? "runas" : ""
                 }
             };
             _process.Start();
@@ -186,51 +192,66 @@ namespace SoftwareUpdater {
             }
         }
 
+        /// <summary>
+        /// Test if the current user has the permission to write files to a directory.
+        /// </summary>
+        /// <param name="directoryPath">Full path to directory </param>
+        /// <returns>true if write permission</returns>
+        public static bool DirectoryPathHasFileWritePermission(string directoryPath) {
+            if (string.IsNullOrEmpty(directoryPath)) {
+                return false;
+            }
+            try {
+                using (File.Create(Path.Combine(directoryPath, Path.GetRandomFileName()), 1, FileOptions.DeleteOnClose)) { }
+                return true;
+            } catch {
+                // ignored
+            }
+            return false;
+        }
+
 	    /// <summary>
         /// Returns true if a file path is writable with the current user.
         /// </summary>
         /// <param name="filePath">Full path to file to test.</param>
-        /// <returns>State [bool]</returns>
+        /// <returns>true if write permission</returns>
         public static bool FilePathHasWritePermission(string filePath) {
             try {
                 if (string.IsNullOrEmpty(filePath)) {
                     return false;
                 }
-                if (!File.Exists(filePath)) {
-				    var directoryPath = Path.GetDirectoryName(filePath);
-	                while (!Directory.Exists(directoryPath)) {
-	                    directoryPath = Path.GetDirectoryName(directoryPath);
-	                }
-                    if (new DirectoryInfo(directoryPath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
-                        return false;
-                    }
-                    if (_writableDirectories == null) {
-#if WINDOWSONLYBUILD
-                        _writableDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-#else
-                        _writableDirectories = new HashSet<string>(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+#if NETFRAMEWORK
+                if (File.Exists(filePath)) {
+                    return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), FileSystemRights.Write);
+                }
 #endif
-                    }
-                    if (_writableDirectories.Contains(directoryPath)) {
-                        return true;
-                    }
-                    using (File.Create(Path.Combine(directoryPath, Path.GetRandomFileName()), 1, FileOptions.DeleteOnClose)) { }
+                var needSubDirCreation = false;
+				var directoryPath = Path.GetDirectoryName(filePath);
+	            while (!Directory.Exists(directoryPath)) {
+                    needSubDirCreation = true;
+	                directoryPath = Path.GetDirectoryName(directoryPath);
+	            }
+                if (_writableDirectories == null) {
+#if WINDOWSONLYBUILD
+                    _writableDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+#else
+                    _writableDirectories = new HashSet<string>(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+#endif
+                }
+                if (_writableDirectories.Contains(directoryPath)) {
+                    return true;
+                }
+                using (File.Create(Path.Combine(directoryPath, Path.GetRandomFileName()), 1, FileOptions.DeleteOnClose)) { }
+
+                if (needSubDirCreation) {
                     var subDir = Path.Combine(directoryPath, Path.GetRandomFileName());
                     Directory.CreateDirectory(subDir);
                     Directory.Delete(subDir);
-                    _writableDirectories.Add(directoryPath);
-                    return true;
                 }
-                if (new FileInfo(filePath).Attributes.HasFlag(FileAttributes.ReadOnly)) {
-                    return false;
-                }
-#if NETFRAMEWORK
-                return IsCurrentUserMatchingRule(File.GetAccessControl(filePath).GetAccessRules(true, true, typeof(SecurityIdentifier)), FileSystemRights.Write);
-#else
-                return false;
-#endif
 
-            } catch {
+                _writableDirectories.Add(directoryPath);
+                return true;
+            } catch (Exception) {
                 return false;
             }
         }
@@ -239,7 +260,7 @@ namespace SoftwareUpdater {
         private static bool IsCurrentUserMatchingRule(AuthorizationRuleCollection rules, FileSystemRights accessRight) {
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
             foreach (FileSystemAccessRule rule in rules) {
-                if (identity?.Groups != null && identity.Groups.Contains(rule.IdentityReference)) {
+                if (identity.User != null && identity.User.Equals(rule.IdentityReference) || identity.Groups != null && identity.Groups.Contains(rule.IdentityReference)) {
                     if ((accessRight & rule.FileSystemRights) == accessRight) {
                         if (rule.AccessControlType == AccessControlType.Allow)
                             return true;
