@@ -106,8 +106,19 @@ namespace SimpleFileUpdater {
                                     case "start":
                                         Process.Start(splitLine[1]);
                                         break;
+                                    case "remove":
+                                        var pathToRemove = splitLine[1];
+                                        if (File.Exists(pathToRemove)) {
+                                            if (new FileInfo(pathToRemove).IsReadOnly) {
+                                                File.SetAttributes(pathToRemove, FileAttributes.Normal);
+                                            }
+                                            File.Delete(pathToRemove);
+                                        }
+                                        if (Directory.Exists(pathToRemove)) {
+                                            Directory.Delete(pathToRemove, true);
+                                        }
+                                        break;
                                 }
-
                                 break;
                             case 3:
                                 if (File.Exists(splitLine[2])) {

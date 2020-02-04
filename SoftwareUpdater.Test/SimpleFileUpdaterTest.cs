@@ -47,17 +47,30 @@ namespace SoftwareUpdater.Test {
             updater.TryToCleanLastExe();
 
             File.WriteAllText(Path.Combine(TestFolder, "file"), "");
+            File.WriteAllText(Path.Combine(TestFolder, "file_to_remove"), "");
+            Directory.CreateDirectory(Path.Combine(TestFolder, "directory_to_remove"));
 
+            updater.AddFileToCopy(Path.Combine(TestFolder, "file"), Path.Combine(TestFolder, "file3"));
             updater.AddFileToMove(Path.Combine(TestFolder, "file"), Path.Combine(TestFolder, "file2"));
+            updater.AddFileToRemove(Path.Combine(TestFolder, "file_to_remove"));
+            updater.AddDirectoryToRemove(Path.Combine(TestFolder, "directory_to_remove"));
 
+            Assert.IsTrue(File.Exists(Path.Combine(TestFolder, "file")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestFolder, "file_to_remove")));
+            Assert.IsTrue(Directory.Exists(Path.Combine(TestFolder, "directory_to_remove")));
             Assert.IsFalse(File.Exists(Path.Combine(TestFolder, "file2")));
+            Assert.IsFalse(File.Exists(Path.Combine(TestFolder, "file3")));
 
             updater.Start();
             updater.Start(-1);
 
             updater.WaitForProcessExit();
 
+            Assert.IsFalse(File.Exists(Path.Combine(TestFolder, "file")));
+            Assert.IsFalse(File.Exists(Path.Combine(TestFolder, "file_to_remove")));
+            Assert.IsFalse(Directory.Exists(Path.Combine(TestFolder, "directory_to_remove")));
             Assert.IsTrue(File.Exists(Path.Combine(TestFolder, "file2")));
+            Assert.IsTrue(File.Exists(Path.Combine(TestFolder, "file3")));
 
             updater.TryToCleanLastExe();
         }

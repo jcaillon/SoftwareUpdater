@@ -130,6 +130,41 @@ namespace SoftwareUpdater {
             return AddFileToMoveOrCopy(from, to, false);
         }
 
+        /// <summary>
+        /// Allows to remove a directory (recursively) during the update.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public bool AddDirectoryToRemove(string path) {
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) {
+                return false;
+            }
+            return AddPathToRemove(path);
+        }
+
+        /// <summary>
+        /// Allows to remove a file during the update.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public bool AddFileToRemove(string path) {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) {
+                return false;
+            }
+            if (!FilePathHasWritePermission(path)) {
+                IsAdminRightsNeeded = true;
+            }
+            return AddPathToRemove(path);
+        }
+
+        private bool AddPathToRemove(string path) {
+            if (_output == null) {
+                _output = new StringBuilder();
+            }
+            _output.Append("remove").Append('\t').Append(path).AppendLine();
+            return true;
+        }
+
         private bool AddFileToMoveOrCopy(string from, string to, bool isCopy) {
             if (string.IsNullOrEmpty(from) || !File.Exists(from) || string.IsNullOrEmpty(to)) {
                 return false;
