@@ -6,14 +6,14 @@
 version: 1.0.{build}-{branch}
 
 # branches to build
-branches:
-  # whitelist
-  only:
-    - master
+# branches:
+#   # whitelist
+#   only:
+#     - master
 
-  # blacklist
-  except:
-    - gh-pages
+#   # blacklist
+#   except:
+#     - gh-pages
 
 # Skipping commits with particular message or from specific user
 skip_commits:
@@ -21,13 +21,13 @@ skip_commits:
 #  author: John                  # Commit author's username, name, email or regexp maching one of these.
 
 # Maximum number of concurrent jobs for the project
-max_jobs: 1
+# max_jobs: 1
 
 # Build worker image (VM template)
 image: Visual Studio 2017
 
 # fetch repository as zip archive
-shallow_clone: false                 # default is "false"
+# shallow_clone: false                 # default is "false"
 
 # environment variables
 #environment:
@@ -86,7 +86,7 @@ deploy:
       secure: OPMZjRDw7XH4QeHkTP98jDI3PhxmsN3/zULUkyT40+dIOMcUExxjGsrK/3qGS5Tz
     artifact: nupkg
     on:
-      branch: master
+      # branch: master
       APPVEYOR_REPO_TAG: true
 
   - provider: GitHub
@@ -101,7 +101,7 @@ deploy:
     draft: true
     prerelease: true
     on:
-      branch: master
+      # branch: master
       APPVEYOR_REPO_TAG: true
 
 #---------------------------------#
