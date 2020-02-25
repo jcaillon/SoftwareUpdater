@@ -97,7 +97,7 @@ deploy:
     # encrypt at https://ci.appveyor.com/tools/encrypt
     auth_token:
       secure: dBbiIkgy8B4pZd5Ifh57Nfr5XWbAM2+/hXC4YE+3cNoBNYn/DBkkOFezX+JbimZq
-    #artifact: nupkg
+    artifact: nupkg
     draft: true
     prerelease: true
     on:
