@@ -16,7 +16,7 @@
     <ProjAuthor>jcaillon</ProjAuthor>
     <ProjApplicationIcon>app.ico</ProjApplicationIcon>
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
-    <ProjDefaultTargetFrameworks>net20;netcoreapp2.0</ProjDefaultTargetFrameworks>
+    <ProjDefaultTargetFrameworks>net461;netcoreapp2.0</ProjDefaultTargetFrameworks>
     <!-- ==== Package ==== -->
     <!-- 64x64 image with transparent background to use as the icon -->
     <ProjPackageIconPath>docs/images/logo.png</ProjPackageIconPath>

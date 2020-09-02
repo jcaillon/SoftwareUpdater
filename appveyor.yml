@@ -83,7 +83,7 @@ deploy:
     # generate at https://www.nuget.org/account/apikeys
     # encrypt at https://ci.appveyor.com/tools/encrypt
     api_key:
-      secure: OPMZjRDw7XH4QeHkTP98jDI3PhxmsN3/zULUkyT40+dIOMcUExxjGsrK/3qGS5Tz
+      secure: GIw8Vfev2qUogBi9uyPIUOxtWBRrKiI5Eu46T6qyAV+8s6Rok0mPsOCbMUZjbWKh
     artifact: nupkg
     on:
       # branch: master

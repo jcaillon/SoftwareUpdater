@@ -1,4 +1,4 @@
-param ( 
+param (
 	[string]
 	$ProjectOrSolutionPath = "SoftwareUpdater\SoftwareUpdater.csproj",
 	[bool]
@@ -12,7 +12,7 @@ param (
 function Main {
     # inspired by ci script from https://github.com/datalust/piggy.
 	# inspired by ci script from https://github.com/Azure/azure-functions-core-tools.
-    $path = $ProjectOrSolutionPath	
+    $path = $ProjectOrSolutionPath
 
 	[string] $ciTag = If ([string]::IsNullOrEmpty($env:APPVEYOR_REPO_TAG_NAME)) {$env:CI_COMMIT_TAG} Else {$env:APPVEYOR_REPO_TAG_NAME}
     $isReleaseBuild = ![string]::IsNullOrEmpty($ciTag)
@@ -38,8 +38,8 @@ function Main {
 }
 
 function New-ArtifactDir {
-    if (Test-Path "./artifacts") { 
-        Remove-Item -Path "./artifacts" -Force -Recurse 
+    if (Test-Path "./artifacts") {
+        Remove-Item -Path "./artifacts" -Force -Recurse
     }
     New-Item -Path "." -Name "artifacts" -ItemType "directory" | Out-Null
 }
@@ -48,12 +48,12 @@ function Start-Tests {
 	if (-Not (Test-Exe("dotnet"))) {
         Throw "The executable dotnet was not found in your path."
 	}
-	
+
 	foreach ($file in Get-ChildItem -Path . -Recurse | Where-Object {$_.Name -like "*.Test.csproj"}) {
 		Write-Host "@@@@@@@@@@@@@@@@@@@@@@@"
 		Write-Host "Testing assembly $($file.Name)"
 		Write-Host "@@@@@@@@@@@@@@@@@@@@@@@"
-		
+
 		iu dotnet test "$($file.FullName)" --verbosity "minimal"
 	}
 }
@@ -72,16 +72,16 @@ function Publish-SimpleUpdate {
 	Write-Host "Building SimpleFileUpdater"
 	Write-Host "@@@@@@@@@@@@@@@@@@@@@@@"
 
-	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.binlog" "/p:AdminManifest=false" "/p:TargetFramework=net20" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
+	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.binlog" "/p:AdminManifest=false" "/p:TargetFramework=net461" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 
-	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.admin.binlog" "/p:AdminManifest=true" "/p:TargetFramework=net20" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
+	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/net20.admin.binlog" "/p:AdminManifest=true" "/p:TargetFramework=net461" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 
 	iu msbuild "$simpleUpdaterCsproj" "/verbosity:minimal" "/t:Restore,Publish" "/p:Configuration=Release" "/bl:SimpleFileUpdater/netcoreapp2.0.binlog" "/p:AdminManifest=false" "/p:TargetFramework=netcoreapp2.0" $(If ([string]::IsNullOrEmpty($Version)) { "" } Else { "/p:Version=$Version" })
 }
 
 function Publish-NugetPackage {
 	param (
-		$Path, 
+		$Path,
 		$Version
 	)
     if (-Not (Test-Exe("msbuild"))) {
@@ -89,7 +89,7 @@ function Publish-NugetPackage {
 	}
 
 	$publishDir = Resolve-Path -Path "./artifacts"
-	
+
 	Write-Host "@@@@@@@@@@@@@@@@@@@@@@@"
 	Write-Host "Publishing nuget package"
 	Write-Host "@@@@@@@@@@@@@@@@@@@@@@@"
@@ -107,7 +107,7 @@ function Invoke-Utility {
 Invokes an external utility, ensuring successful execution.
 
 .DESCRIPTION
-Invokes an external utility (program) and, if the utility indicates failure by 
+Invokes an external utility (program) and, if the utility indicates failure by
 way of a nonzero exit code, throws a script-terminating error.
 
 * Pass the command the way you would execute the command directly.
@@ -122,8 +122,8 @@ is nonzero.
     $exe, $argsForExe = $Args
     $ErrorActionPreference = 'Stop' # in case $exe isn't found
     & $exe $argsForExe
-    if ($LASTEXITCODE) { 
-        Throw "$exe indicated failure (exit code $LASTEXITCODE; full command: $Args)." 
+    if ($LASTEXITCODE) {
+        Throw "$exe indicated failure (exit code $LASTEXITCODE; full command: $Args)."
     }
 }
 
@@ -138,7 +138,7 @@ try {
 	}
     $exceptionCatched = $_.Exception.ToString()
 	Write-Host "Exception : $exceptionCatched"
-	$exitcode = 1	
+	$exitcode = 1
 }
 
 if ($ShouldExit) {
